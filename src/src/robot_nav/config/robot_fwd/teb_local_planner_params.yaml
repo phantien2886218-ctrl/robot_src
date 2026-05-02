@@ -1,0 +1,135 @@
+TebLocalPlannerROS:
+
+  # ==================================
+  # 基础配置 (Topics & Frames)
+  # ==================================
+  odom_topic: /odom_trans         # 里程计话题
+  map_frame: odom_combined        # 地图坐标系
+
+  # ==================================
+  # 轨迹配置 (Trajectory)
+  # ==================================
+  teb_autosize: True              # 允许动态调整轨迹长度
+  dt_ref: 0.3                     # 【优化】原0.4较粗糙，0.3能生成更平滑细腻的路径
+  dt_hysteresis: 0.1              # 滞后系数，防止轨迹长度频繁跳变
+  global_plan_overwrite_orientation: True # 使用局部规划器的朝向覆盖全局规划
+  max_global_plan_lookahead_dist: 3.0     # 向前看3米，适合室内环境
+  feasibility_check_no_poses: 5   # 检测未来5个点的可行性
+
+  # ==================================
+  # 机器人参数 (Robot Configuration)
+  # ==================================
+  # 速度限制
+  max_vel_x: 0.5                  # 【优化】原0.3太慢，提升至0.5m/s以匹配DWA
+  max_vel_x_backwards: 0.25       # 后退速度保持保守，防止盲区碰撞
+  max_vel_y: 0.0                  # 差速机器人，Y轴速度必须为0
+  max_vel_theta: 1.8              # 【优化】原1.0转弯太慢，提升至1.8rad/s，转向更灵敏
+
+  # 加速度限制
+  acc_lim_x: 0.5                  # TEB对加速度很敏感，0.5~0.8较为平顺，防止起步抬头
+  acc_lim_y: 0.0
+  acc_lim_theta: 2.0              # 【优化】提升角加速度，让转向响应更快
+
+  # 运动学模型
+  min_turning_radius: 0.0         # 差速机器人原地转向半径为0
+  wheelbase: 0.0                  # 差速机器人轴距设为0
+  cmd_angle_instead_rotvel: False # 使用标准cmd_vel (线速度+角速度)
+
+  # ==================================
+  # 机器人足迹模型 (Footprint Model)
+  # ==================================
+  footprint_model:
+    type: "polygon"
+    vertices: [[-0.2, -0.15], [-0.2, 0.15], [0.2, 0.15], [0.2, -0.15]] # 您的0.4x0.3矩形尺寸
+
+  # ==================================
+  # 目标容差 (Goal Tolerance)
+  # ==================================
+  xy_goal_tolerance: 0.10         # 位置允许误差 10cm
+  yaw_goal_tolerance: 0.10        # 角度允许误差 约5.7度
+  free_goal_vel: False            # 到达目标时速度必须为0
+  complete_global_plan: True      
+
+  # ==================================
+  # 障碍物避障 (Obstacles)
+  # ==================================
+  # 【关键优化】
+  # 多边形模式下，这是"车体边缘"到障碍物的最小距离。
+  # 您的车宽0.3m，如果设0.2，则需要(0.3+0.2+0.2)=0.7m的通道才能过。
+  # 改为0.12m，保留安全余量的同时提升通过性。
+  min_obstacle_dist: 0.05         
+  
+  include_costmap_obstacles: True # 考虑代价地图中的障碍物
+  costmap_obstacles_behind_robot_dist: 1.0 # 考虑身后1米内的障碍物
+  obstacle_poses_affected: 30     # 【优化】增加受障碍物影响的点数，使避障轨迹更平滑远离
+  costmap_converter_plugin: ""
+  costmap_converter_spin_thread: True
+  costmap_converter_rate: 5
+  include_dynamic_obstacles: True 
+  dynamic_obstacle_inflation_dist: 0.6
+
+  # ==================================
+  # 优化参数 (Optimization)
+  # ==================================
+  no_inner_iterations: 5
+  no_outer_iterations: 4
+  optimization_activate: True
+  optimization_verbose: False
+  penalty_epsilon: 0.05
+  obstacle_cost_exponent: 3       # 障碍物成本指数，越大越怕撞
+  
+  weight_max_vel_x: 2             # 【优化】略微增加速度权重，鼓励机器人跑起来
+  weight_max_vel_theta: 1
+  weight_acc_lim_x: 1
+  weight_acc_lim_theta: 1
+  
+  # 非完整运动学约束 (Non-holonomic constraints)
+  weight_kinematics_nh: 1000      # 必须很高，强制机器人不能横向移动
+  weight_kinematics_forward_drive: 60 # 较高的值迫使机器人尽量向前开，少倒车
+  weight_kinematics_turning_radius: 1
+  
+  weight_optimaltime: 1           # 时间最优权重
+  weight_shortest_path: 0         # 0表示不强制走最短路，而是走最快路
+  weight_obstacle: 50             # 避障权重
+  weight_inflation: 0.05           # 【优化】膨胀权重，保持与障碍物的距离
+  weight_dynamic_obstacle: 10 
+  weight_dynamic_obstacle_inflation: 0.1
+  weight_viapoint: 1
+  weight_adapt_factor: 2
+
+  # ==================================
+  # 同论类规划 (Homotopy Class Planner)
+  # ==================================
+  # 如果您的控制器是 树莓派4 或 Jetson Nano，建议设为 False 以节省CPU
+  # 如果是 i5/i7 工控机，可以设为 True 以获得多路径择优能力
+  enable_homotopy_class_planning: True 
+  
+  enable_multithreading: True
+  max_number_classes: 2           # 限制同时考虑的路径数量
+  selection_cost_hysteresis: 1.0
+  selection_prefer_initial_plan: 0.95
+  selection_obst_cost_scale: 1.0
+  selection_alternative_time_cost: False
+  roadmap_graph_no_samples: 15
+  roadmap_graph_area_width: 5
+  roadmap_graph_area_length_scale: 1.0
+  h_signature_prescaler: 0.5
+  h_signature_threshold: 0.1
+  obstacle_heading_threshold: 0.45
+  switching_blocking_period: 0.0
+  viapoints_all_candidates: True
+  delete_detours_backwards: True
+  max_ratio_detours_duration_best_duration: 3.0
+  visualize_hc_graph: False
+  visualize_with_time_as_z_axis_scale: False
+
+  # ==================================
+  # 恢复行为 (Recovery)
+  # ==================================
+  shrink_horizon_backup: True
+  shrink_horizon_min_duration: 10
+  oscillation_recovery: False     # 振荡恢复，通常设为False，交由move_base层处理
+  oscillation_v_eps: 0.1
+  oscillation_omega_eps: 0.1
+  oscillation_recovery_min_duration: 10
+  oscillation_filter_duration: 10

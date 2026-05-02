@@ -1,0 +1,16 @@
+<launch>
+    <arg name="serial_port" default="/dev/robot_base"/>
+    <arg name="baud_rate"   default="115200"/> <arg name="robot_type"  default="r20_fwd" doc="robot type [r20_mec, r20_akm, r20_fwd, r20_twd]"/>
+
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+        <param name="port" value="$(arg serial_port)"/>
+        <param name="baud" value="$(arg baud_rate)"/>
+    </node>
+
+    <node pkg="robot_robot" type="odom_to_tf.py" name="odom_tf_broadcaster" output="screen" />
+
+    <include file="$(find robot_description)/launch/model.launch">
+        <arg name="robot_type" value="$(arg robot_type)"/>
+    </include>
+
+</launch>
