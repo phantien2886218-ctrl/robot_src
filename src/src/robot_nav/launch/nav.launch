@@ -1,0 +1,35 @@
+<launch>
+
+    <include file="$(find robot_bringup)/launch/bringup.launch" />
+
+
+    <node pkg="robot_bringup" type="robot_odom_trans.py" name="odom_trans" output="screen">
+        <remap from="input" to="/robot_pose_ekf/odom_combined"/>
+        <remap from="output" to="odom_trans"/>
+    </node>
+
+
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find robot_nav)/maps/test_map.yaml" />
+
+
+    <group>
+        <remap from="odom" to="odom_trans"/>
+        
+        <include file="$(find robot_nav)/launch/include/robot_amcl.launch">
+            <arg name="odom_frame"       value="odom_combined"/>
+            <arg name="base_frame"       value="base_footprint"/>
+            <arg name="global_frame"     value="map"/>
+            <arg name="odom_model_type"  value="omni-corrected"/>
+        </include>
+    </group>
+
+
+    <group>
+        <remap from="odom" to="odom_trans"/>
+        
+        <include file="$(find robot_nav)/launch/include/robot_move_base.launch">
+            <arg name="robot_type"   value="robot_fwd"/>  
+        </include>
+    </group>
+
+</launch>

@@ -1,0 +1,17 @@
+<launch>
+    <include file="$(find robot_robot)/launch/robot.launch" />
+
+    <include file="$(find ydlidar_ros_driver)/launch/X2.launch" />
+
+    <node pkg="tf" type="static_transform_publisher" name="footprint_to_base"
+          args="0.0 0.0 0.0 0.0 0.0 0.0 base_footprint base_link 40" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_laser"
+          args="0.0 0.0 0.2 0.0 0.0 0.0 base_link laser_link 40" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_imu"
+          args="0.0 0.09 0.11 0.0 0.0 0.0 base_footprint imu_link 40" />
+
+    <include file="$(find robot_pose_ekf)/robot_pose_ekf.launch" />
+
+</launch>

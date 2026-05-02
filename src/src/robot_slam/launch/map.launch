@@ -1,0 +1,14 @@
+<launch>
+    <include file="$(find robot_bringup)/launch/bringup.launch" />
+
+    <node pkg="robot_bringup" type="robot_odom_trans.py" name="odom_trans" output="screen">
+        <remap from="input" to="/robot_pose_ekf/odom_combined"/>
+        <remap from="output" to="odom_trans"/>
+    </node>
+
+    <group>
+        <remap from="odom" to="odom_trans"/>
+        
+        <include file="$(find robot_slam)/launch/includes/robot_cartographer.launch"/>
+    </group>
+</launch>
